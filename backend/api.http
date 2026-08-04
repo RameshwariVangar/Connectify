@@ -1,0 +1,59 @@
+POST http://localhost:9090/register HTTP/1.1
+Content-Type : application/json
+
+{
+    "username":"sonu",
+    "password":"1234",
+    "email":"234@gmail.com",
+    "name" : "sonu"
+}
+
+###
+
+POST http://localhost:9090/login HTTP/1.1
+Content-Type: application/json
+
+{
+    "email":"234@gmail.com",
+    "password":"1234"
+}
+###
+
+GET http://localhost:9090/posts HTTP/1.1
+
+
+###
+GET http://localhost:9090/get_user_and_Profile HTTP/1.1
+Content-Type: application/json
+
+{
+    "token" : "8001c96309716232d35b9bc6bb2c83db871cc63d89d496249288e8acb766d3a5"
+}
+
+###
+POST  http://localhost:9090/update_profile_Data HTTP/1.1
+Content-Type: application/json
+
+{
+    "token" : "d23aa030f8eadae5fcfd6224655c17a4ab04fdd917e9260ff02c9792b52dd8c7",
+    "bio" : "Full Stack Developer",
+    "currentPost" : "Frontend Dev",
+    "pastWork" : [
+        {
+            "company"  : "LTM",
+            "position" : "Frontend Dev",
+            "years"    : "2"
+        }
+    ],
+    "education" : [
+        {
+            "school" : "Dr.N.J.Paulbudhe",
+            "degree" : "SKN SITS",
+            "fieldOfStudy" : "BE in IT"
+        }
+    ]
+}
+
+###
+GET http://localhost:9090/user/get_all_usersprofile HTTP/1.1
+
