@@ -1,0 +1,61 @@
+.container {
+    width: 100%;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.navBar {
+    max-width: 1200px;
+    margin: 0 auto;
+    height: 70px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+.navBar h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #2563eb;
+    margin: 0;
+}
+
+.navbarOptionContainer {
+    display: flex;
+    align-items: center;
+}
+
+.navbarOptionContainer p {
+    font-size: 15px;
+    color: #475569;
+    margin: 0;
+    transition: color 0.2s;
+}
+
+.navbarOptionContainer p[style*="cursor: pointer"]:hover {
+    color: #2563eb;
+}
+
+.buttonJoin {
+    background-color: #2563eb;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.buttonJoin:hover {
+    background-color: #1d4ed8;
+}
+
+.buttonJoin p {
+    color: white !important;
+    font-size: 14px;
+}

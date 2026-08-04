@@ -1,0 +1,129 @@
+.container {
+    min-height: 90vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f8fafc;
+    padding: 20px;
+}
+
+.cardContainer {
+    display: flex;
+    max-width: 850px;
+    width: 100%;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.cardContainer__left {
+    flex: 1.2;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.cardLeft__heading {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.inputContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.inputRow {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+}
+
+.inputField {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #334155;
+    background-color: #ffffff;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.inputField:focus {
+    border-color: #2563eb;
+}
+
+.buttonWithOutline {
+    background-color: #2563eb;
+    color: white;
+    padding: 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border: none;
+}
+
+.buttonWithOutline:hover {
+    background-color: #1d4ed8;
+}
+
+.cardContainer__right {
+    flex: 0.8;
+    background-color: #eff6ff;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+}
+
+.cardContainer__right p {
+    font-size: 16px;
+    color: #475569;
+    margin: 0;
+}
+
+.cardContainer__right .buttonWithOutline {
+    background-color: transparent !important;
+    border: 2px solid #2563eb !important;
+    color: #2563eb !important;
+    width: 100%;
+    max-width: 200px;
+}
+
+.cardContainer__right .buttonWithOutline:hover {
+    background-color: #2563eb !important;
+    color: white !important;
+}
+
+@media (max-width: 768px) {
+    .cardContainer {
+        flex-direction: column;
+    }
+
+    .cardContainer__left {
+        padding: 30px 20px;
+    }
+
+    .cardContainer__right {
+        padding: 30px 20px;
+    }
+
+    .inputRow {
+        flex-direction: column;
+        gap: 16px;
+    }
+}

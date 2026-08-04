@@ -1,0 +1,104 @@
+.searchPageContainer {
+    max-width: 650px;
+    margin: 0 auto;
+    padding: 20px 10px;
+}
+
+.searchBarWrapper {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.searchInputField {
+    width: 100%;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    padding: 6px 8px;
+    font-family: inherit;
+    background: transparent;
+}
+
+.allUserProfile {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.allUserProfile h1 {
+    font-size: 18px;
+    color: #1e293b;
+    margin: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.userCard {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease-in-out;
+}
+
+.userCard:hover {
+    background-color: #edf2f7;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+}
+
+.userCard img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: #e2e8f0;
+}
+
+.userCard div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.userCard h1 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #334155;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.userCard p {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+}
+
+.noResults {
+    font-size: 16px;
+    color: #64748b;
+    text-align: center;
+    padding: 20px 0;
+    margin: 0;
+}
+
+@media (max-width: 640px) {
+    .searchPageContainer {
+        padding: 10px;
+    }
+}
