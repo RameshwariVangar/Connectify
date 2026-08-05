@@ -66,7 +66,7 @@ export default function GetAllChats() {
                                     />
                                     <div className={styles.info}>
                                         <h4 className={styles.name}>{chatPartner?.name || "Unknown User"}</h4>
-                                        <p className={styles.username}>@{chatPartner?.username}</p>
+                                        <p className={styles.username}>{chatPartner?.username}</p>
                                     </div>
                                 </div>
                             );

@@ -96,7 +96,7 @@ export default function () {
                            alt="profile"
                            className={styles.receiverAvatar}
                         />
-                        <h3 className={styles.receiverName}>{receiver?.name} (@{receiver?.username})</h3>
+                        <h3 className={styles.receiverName}>{receiver?.name} ({receiver?.username})</h3>
                      </>
                   ) : (
                      <div className={styles.headerLoader}>
