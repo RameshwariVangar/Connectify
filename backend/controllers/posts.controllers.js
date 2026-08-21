@@ -9,14 +9,14 @@ export const activeCheck= (req,res)=>{
 
 export const createPost = async(req,res)=>{
 
-    // 1. Header se token nikaalo
+   
         const authHeader = req.headers.authorization;
-    // Check karo ki header aaya bhi hai ya nahi aur kya woh 'Bearer ' se shuru ho raha hai
+    
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
             return res.status(401).json({ message: "No token provided, authorization denied" });
         }
 
-        // 💡 'Bearer XYZ123' mein se 'Bearer' ko hata kar sirf asli token ('XYZ123') alag karo
+    
         const token = authHeader.split(" ")[1];
 
     try{

@@ -269,11 +269,47 @@ export const updateProfileData = async(req,res)=>{  // update Profile (profile m
 
 export const getAllUserProfile = async(req,res)=>{
     try{
-
-        const profiles = await Profile.find().populate("userId","name username email profilePicture");
+        const profiles = await Profile.aggregate([
+            {
+                $lookup: {
+                    from: "posts",
+                    localField: "userId",
+                    foreignField: "userId",
+                    as: "userPosts"
+                }
+            },
+            {
+                $addFields: {
+                    postCount: { $size: "$userPosts" }
+                }
+            },
+            {
+                $sort: { postCount: -1 }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "userId",
+                    foreignField: "_id",
+                    as: "userId"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$userId",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $project: {
+                    userPosts: 0,
+                    "userId.password": 0,
+                    "userId.token": 0
+                }
+            }
+        ]);
         
         return res.json({ profiles });
-
     }
     catch(err){
          return res.status(500).json({message : err.message});
@@ -539,43 +575,38 @@ export const accessChat = async (req, res) => {
     }
 };
 
-export const sendMsg = async(req,res)=>{
+export const sendMsg = async (req, res) => {
     try {
-        const { chatId,senderId, messageText } = req.body; // Frontend se chat room ki ID aur text aaya
-                // Aapki ID (Sender)
+        const { chatId, senderId, messageText } = req.body;
 
         if (!chatId || !messageText) {
             return res.status(400).json({ message: "Chat ID and message text are required" });
         }
 
-        // 📝 Naya message object taiyar karo
         const newMessage = {
             senderId: senderId,
             messageText: messageText,
             timestamp: new Date()
         };
 
-        // 🪄 MongoDB ka $push operator use karke specific chat ke messages array mein insert karo
-        // { new: true } se hume updated chat document return mein milta hai
+        // 🪄 .populate("participants") lagana zaroori hai taaki profile details lost na ho!
         const updatedChat = await Chat.findByIdAndUpdate(
             chatId,
             { $push: { messages: newMessage } },
             { new: true }
-        );
+        ).populate("participants", "name username profilePicture");
 
         if (!updatedChat) {
             return res.status(404).json({ message: "Chat room not found" });
         }
 
-        // Frontend ko updated chat bhej do taaki screen par naya message turant dikh jaye
         res.status(200).json(updatedChat);
 
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Server error while sending message" });
     }
-}
-
+};
 
 export const participateChat = async (req, res) => {
     try {

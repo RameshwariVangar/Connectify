@@ -1,34 +1,63 @@
-import { getMyConnectionReq , AcceptConnection, getConnectionsRequest} from '@/config/redux/action/authAction';
-import DashBoardLayOut from '@/layout/DashBoardLayOut'
-import UserLayout from '@/layout/userLayout'
-import React, { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import styles from './index.module.css'
-import { BASE_URL } from "@/config";
+import { getMyConnectionReq, AcceptConnection, getConnectionsRequest } from '@/config/redux/action/authAction';
+import DashBoardLayOut from '@/layout/DashBoardLayOut';
+import UserLayout from '@/layout/userLayout';
+import React, { useEffect, useMemo, memo, useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectConnectionReq, selectConnections } from '@/config/redux/selectors/authSelectors';
+import { getImageUrl, handleImageError } from '@/utils/imageUtils';
+import styles from './index.module.css';
 import { useRouter } from 'next/router';
 import { getAllPosts } from '@/config/redux/action/postAction';
 
-export default function MyConnectionPage() {
-
+function MyConnectionPage() {
   const dispatch = useDispatch();
-  const authState = useSelector((state)=> state.auth);
   const router = useRouter();
 
-  useEffect(()=>{
-    dispatch(getMyConnectionReq({ token: localStorage.getItem("token") }));
-    dispatch(getConnectionsRequest({token: localStorage.getItem("token")}));
-    dispatch(getAllPosts());
+  const connectionRequests = useSelector(selectConnectionReq);
+  const acceptedConnections = useSelector(selectConnections);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem("token")) {
+      const token = localStorage.getItem("token");
+      dispatch(getMyConnectionReq({ token }));
+      dispatch(getConnectionsRequest({ token }));
+      dispatch(getAllPosts());
+    }
   }, [dispatch]);
 
-  const connectionRequests = authState?.connectionReq || [];
-  const acceptedConnections = authState?.connections || [];
+  const pendingRequests = useMemo(() => {
+    return (connectionRequests || []).filter((conn) => conn?.status_accepted == null);
+  }, [connectionRequests]);
 
-  const pendingRequests = connectionRequests.filter((conn) => conn?.status_accepted == null);
-  const acceptedFromReq = connectionRequests.filter((conn) => conn?.status_accepted != null);
-  const acceptedFromConn = acceptedConnections.filter((conn) => conn?.status_accepted != null);
-  const pendingConn = acceptedConnections.filter((conn)=>conn?.status_accepted == null);
+  const acceptedFromReq = useMemo(() => {
+    return (connectionRequests || []).filter((conn) => conn?.status_accepted != null);
+  }, [connectionRequests]);
+
+  const acceptedFromConn = useMemo(() => {
+    return (acceptedConnections || []).filter((conn) => conn?.status_accepted != null);
+  }, [acceptedConnections]);
+
+  const pendingConn = useMemo(() => {
+    return (acceptedConnections || []).filter((conn) => conn?.status_accepted == null);
+  }, [acceptedConnections]);
 
   const hasNetwork = acceptedFromReq.length > 0 || acceptedFromConn.length > 0;
+
+  const handleAcceptConnection = useCallback((connectionId, e) => {
+    e.stopPropagation();
+    if (typeof window !== 'undefined') {
+      dispatch(AcceptConnection({
+        connectionId: connectionId,
+        token: localStorage.getItem("token"),
+        action: 'accept'
+      }));
+    }
+  }, [dispatch]);
+
+  const handleOpenChat = useCallback((userId, e) => {
+    e.stopPropagation();
+    router.push(`/chats/?receiverId=${userId}`);
+  }, [router]);
 
   return (
     <UserLayout>
@@ -43,26 +72,28 @@ export default function MyConnectionPage() {
                 <div 
                   onClick={() => router.push(`/view_profile/${user?.userId?.username}`)} 
                   className={styles.userCard} 
-                  key={`pending-${index}`}
+                  key={user?._id || `pending-${index}`}
                 > 
                   <div className={styles.cardContent}>
-                    <div style={{display:"flex", alignItems:"center" , gap:"1.4rem"}}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "1.4rem" }}>
                       <div className={styles.profilePicture}>
-                        <img src={`${BASE_URL}/${user?.userId?.profilePicture}`} alt=''/>
+                        <img 
+                          src={getImageUrl(user?.userId?.profilePicture)} 
+                          onError={handleImageError} 
+                          alt=''
+                        />
                       </div>
                       <div className={styles.userInfo}>
                         <h3>{user?.userId?.name}</h3>
-                        <h3>{user?.userId?.username}</h3>
+                        <h3>@{user?.userId?.username}</h3>
                       </div>                  
                     </div>
-                    <button onClick={(e) => {
-                      e.stopPropagation();
-                      dispatch(AcceptConnection({
-                        connectionId: user?._id,
-                        token: localStorage.getItem("token"),
-                        action: 'accept'
-                      }));
-                    }} className={styles.connectedButton}> Accept </button>
+                    <button 
+                      onClick={(e) => handleAcceptConnection(user?._id, e)} 
+                      className={styles.connectedButton}
+                    > 
+                      Accept 
+                    </button>
                   </div>
                 </div>
              ))
@@ -74,25 +105,27 @@ export default function MyConnectionPage() {
              <p className={styles.noDataText}>No Req pending Send by you..</p>
           ) : (
              pendingConn.map((user, index) => ( 
-              <div key={`pending-conn-${index}`}>
+              <div key={user?._id || `pending-conn-${index}`}>
                 <h3 className={styles.sectionHeading}>Request send by you</h3>
                 <div 
                   onClick={() => router.push(`/view_profile/${user?.connectionId?.username}`)} 
                   className={styles.userCard} 
                 >  
                   <div className={styles.cardContent}>
-                    <div style={{display:"flex", alignItems:"center" , gap:"1.4rem"}}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "1.4rem" }}>
                       <div className={styles.profilePicture}>
-                        <img src={`${BASE_URL}/${user?.connectionId?.profilePicture}`} alt=''/>
+                        <img 
+                          src={getImageUrl(user?.connectionId?.profilePicture)} 
+                          onError={handleImageError} 
+                          alt=''
+                        />
                       </div>
                       <div className={styles.userInfo}>
                         <h3>{user?.connectionId?.name}</h3>
-                        <h3>{user?.connectionId?.username}</h3>
+                        <h3>@{user?.connectionId?.username}</h3>
                       </div>                  
                     </div>
-                    <button onClick={(e) => {
-                      e.stopPropagation();
-                    }} className={styles.connectedButton}> Request Send </button>
+                    <button onClick={(e) => e.stopPropagation()} className={styles.connectedButton}> Request Send </button>
                   </div>
                 </div>
               </div>
@@ -107,22 +140,28 @@ export default function MyConnectionPage() {
               <div 
                 onClick={() => router.push(`/view_profile/${user?.userId?.username}`)} 
                 className={styles.userCard} 
-                key={`accepted-req-${index}`}
+                key={user?._id || `accepted-req-${index}`}
               >
                 <div className={styles.cardContent}>
-                  <div style={{display:"flex", alignItems:"center" , gap:"1.4rem"}}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "1.4rem" }}>
                     <div className={styles.profilePicture}>
-                      <img src={`${BASE_URL}/${user?.userId?.profilePicture}`} alt=''/>
+                      <img 
+                        src={getImageUrl(user?.userId?.profilePicture)} 
+                        onError={handleImageError} 
+                        alt=''
+                      />
                     </div>
                     <div className={styles.userInfo}>
                       <h3>{user?.userId?.name}</h3>
-                      <h3>{user?.userId?.username}</h3>
+                      <h3>@{user?.userId?.username}</h3>
                     </div>                  
                   </div>
-                  <button onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(`/chats/?receiverId=${user?.userId?._id}`);
-                  }} className={styles.chatButton}>Chat</button>
+                  <button 
+                    onClick={(e) => handleOpenChat(user?.userId?._id, e)} 
+                    className={styles.chatButton}
+                  >
+                    Chat
+                  </button>
                 </div>
               </div>
           ))}
@@ -131,22 +170,28 @@ export default function MyConnectionPage() {
               <div 
                 onClick={() => router.push(`/view_profile/${user?.connectionId?.username}`)} 
                 className={styles.userCard} 
-                key={`accepted-conn-${index}`}
+                key={user?._id || `accepted-conn-${index}`}
               >
                 <div className={styles.cardContent}>
-                  <div style={{display:"flex", alignItems:"center" , gap:"1.4rem"}}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "1.4rem" }}>
                     <div className={styles.profilePicture}>
-                      <img src={`${BASE_URL}/${user?.connectionId?.profilePicture}`} alt=''/>
+                      <img 
+                        src={getImageUrl(user?.connectionId?.profilePicture)} 
+                        onError={handleImageError} 
+                        alt=''
+                      />
                     </div>
                     <div className={styles.userInfo}>
                       <h3>{user?.connectionId?.name}</h3>
-                      <h3>{user?.connectionId?.username}</h3>
+                      <h3>@{user?.connectionId?.username}</h3>
                     </div>                  
                   </div>
-                  <button onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(`/chats/?receiverId=${user?.connectionId?._id}`);
-                  }} className={styles.chatButton}>Chat</button>
+                  <button 
+                    onClick={(e) => handleOpenChat(user?.connectionId?._id, e)} 
+                    className={styles.chatButton}
+                  >
+                    Chat
+                  </button>
                 </div>
               </div>
           ))}
@@ -154,5 +199,7 @@ export default function MyConnectionPage() {
         </div>
       </DashBoardLayOut>
     </UserLayout>
-  )
+  );
 }
+
+export default memo(MyConnectionPage);

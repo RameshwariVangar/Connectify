@@ -114,33 +114,51 @@ const authSlice = createSlice({
          .addCase(accessChats.pending, (state) => {
             state.isLoading = true;
             state.isError = null;
+            // state.activeChat is purposefully retained to prevent UI loading flickering
          })
          .addCase(accessChats.fulfilled, (state, action) => {
             state.isLoading = false;
-            state.activeChat = action.payload; // 🔥 Boom! Payload yahan save ho gaya
+            state.activeChat = action.payload;
             state.isError = null;
+         })
+         .addCase(accessChats.rejected, (state, action) => {
+            state.isLoading = false;
+            state.isError = action.payload;
          })
          .addCase(sendMsg.fulfilled, (state, action) => {
             state.isError = false;
-            state.activeChat = action.payload;
+            if (action.payload) {
+               if (state.activeChat) {
+                 
+                  state.activeChat = {
+                     ...state.activeChat,
+                     ...action.payload,
+                     
+                     participants: (action.payload.participants && typeof action.payload.participants[0] === 'object')
+                        ? action.payload.participants
+                        : state.activeChat.participants,
+                     messages: action.payload.messages || state.activeChat.messages
+                  };
+               } else {
+                  state.activeChat = action.payload;
+               }
+            }
          })
          .addCase(getAllChats.fulfilled, (state, action) => {
             state.isError = false;
             state.getMyChat = action.payload;
          })
-         // .addCase(deleteMsg.fulfilled, (state, action) => {
-         //    state.isLoading = false;
-         //       if (state.activeChat && state.activeChat.messages) {
-         //          state.activeChat.messages = state.activeChat.messages.filter(
-         //             (msg) => msg._id !== action.payload.messageId
-         //          );
-         //       }
-         //    })
-         
-
+         .addCase(deleteMsg.fulfilled, (state, action) => {
+            state.isLoading = false;
+            if (state.activeChat && state.activeChat.messages && action.payload?.messageId) {
+               state.activeChat.messages = state.activeChat.messages.filter(
+                  (msg) => String(msg._id || msg.id) !== String(action.payload.messageId)
+               );
+            }
+         });
    }
 });
 
-export const { reset, emptyMessage, setTokenIsThere, setTokenIsNotThere } = authSlice.actions;  // it is inbuild object 
+export const { reset, emptyMessage, setTokenIsThere, setTokenIsNotThere, clearActiveChat } = authSlice.actions;
 
 export default authSlice.reducer;
