@@ -109,12 +109,17 @@ export default function Dashboard() {
     const activePostId = useSelector(selectActivePostId);
 
     useEffect(() => {
-        if (typeof window !== 'undefined' && localStorage.getItem('token') === null) {
+    if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('token');
+        if (!token) {
             router.push("/login");
+        } else {
+            dispatch(setTokenIsThere());
+            dispatch(getAboutUser({ token }));
+            dispatch(getAllPosts());
         }
-        dispatch(setTokenIsThere());
-    }, [dispatch, router]);
-
+    }
+  }, [dispatch, router]);
     useEffect(() => {
         if (isTokenThere) {
             dispatch(getAllPosts());
