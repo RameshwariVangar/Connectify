@@ -108,18 +108,13 @@ export default function Dashboard() {
     const comments = useSelector(selectPostComments);
     const activePostId = useSelector(selectActivePostId);
 
-    useEffect(() => {
-    if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('token');
-        if (!token) {
+     useEffect(() => {
+        if (localStorage.getItem('token') === null) {
             router.push("/login");
-        } else {
-            dispatch(setTokenIsThere());
-            dispatch(getAboutUser({ token }));
-            dispatch(getAllPosts());
         }
-    }
-  }, [dispatch, router]);
+
+        dispatch(setTokenIsThere());
+    }, [])
     useEffect(() => {
         if (isTokenThere) {
             dispatch(getAllPosts());
