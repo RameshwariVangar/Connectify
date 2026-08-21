@@ -75,11 +75,24 @@ const authSlice = createSlice({
             state.isError = true;
             state.message = action.payload?.message || action.error?.message || "Something went wrong";
          })
+         .addCase(getAboutUser.pending, (state) => {
+            state.isLoading = true;
+         })
          .addCase(getAboutUser.fulfilled, (state, action) => {
             state.isLoading = false;
             state.isError = false;
             state.profileFetched = true;
-            state.user = action.payload.userProfile;
+            state.isTokenThere = true;
+            state.user = action.payload?.userProfile || action.payload?.user || action.payload;
+         })
+         .addCase(getAboutUser.rejected, (state, action) => {
+            state.isLoading = false;
+            state.isError = true;
+            state.isTokenThere = false;
+            state.user = null;
+            if (typeof window !== 'undefined') {
+               localStorage.removeItem("token");
+            }
          })
          .addCase(getAllUsers.fulfilled, (state, action) => {
             state.isError = false;

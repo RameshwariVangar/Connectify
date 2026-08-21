@@ -1,21 +1,21 @@
 import { createPost, deletePost, getAllComments, getAllPosts, incrementPostLike, postComment } from "@/config/redux/action/postAction";
 import { getAboutUser, getAllUsers } from "@/config/redux/action/authAction";
 import { useRouter } from "next/router";
-import React, { useEffect, useState, useCallback, memo } from "react";
+import React, { useEffect, useState, useCallback, useRef, memo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import UserLayout from "@/layout/userLayout";
 import DashBoardLayOut from "@/layout/DashBoardLayOut";
 import { setTokenIsThere } from "@/config/redux/reducer/authReducer";
 import styles from "./index.module.css";
-import { BASE_URL } from "@/config";
 import { resetPostId } from "@/config/redux/reducer/postReducer";
 import { selectLoggedUser, selectIsTokenThere, selectAllProfilesFetched } from "@/config/redux/selectors/authSelectors";
 import { selectPosts, selectPostComments, selectActivePostId } from "@/config/redux/selectors/postSelectors";
 import { getImageUrl, handleImageError } from "@/utils/imageUtils";
 
 const PostCard = memo(function PostCard({ post, loggedUserId, onDeletePost, onLikePost, onOpenComments }) {
-   const isMyPost = post?.userId?._id === loggedUserId;
-   const avatarUrl = getImageUrl(post?.userId?.profilePicture);
+   const postUserId = post?.userId?._id || post?.userId;
+   const isMyPost = Boolean(postUserId && loggedUserId && String(postUserId) === String(loggedUserId));
+   const avatarUrl = getImageUrl(post?.userId?.profilePicture || post?.profilePicture);
    const mediaUrl = post?.media ? getImageUrl(post.media) : null;
 
    const handleShare = useCallback(() => {
@@ -40,8 +40,8 @@ const PostCard = memo(function PostCard({ post, loggedUserId, onDeletePost, onLi
             <div className={styles.postMainContent}>
                <div className={styles.postHeader}>
                   <div>
-                     <p className={styles.profileName}>{post?.userId?.name}</p>
-                     <p className={styles.profileUsername}>@{post?.userId?.username}</p>
+                     <p className={styles.profileName}>{post?.userId?.name || post?.name || "User"}</p>
+                     <p className={styles.profileUsername}>@{post?.userId?.username || post?.username || "user"}</p>
                   </div>
 
                   {isMyPost && (
@@ -100,6 +100,7 @@ const PostCard = memo(function PostCard({ post, loggedUserId, onDeletePost, onLi
 export default function Dashboard() {
     const router = useRouter();
     const dispatch = useDispatch();
+    const fileInputRef = useRef(null);
 
     const user = useSelector(selectLoggedUser);
     const isTokenThere = useSelector(selectIsTokenThere);
@@ -108,25 +109,28 @@ export default function Dashboard() {
     const comments = useSelector(selectPostComments);
     const activePostId = useSelector(selectActivePostId);
 
-     useEffect(() => {
-        if (localStorage.getItem('token') === null) {
-            router.push("/login");
-        }
-
-        dispatch(setTokenIsThere());
-    }, [])
     useEffect(() => {
-        if (isTokenThere) {
+        if (typeof window !== 'undefined') {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                router.push('/login');
+                return;
+            }
+            if (!isTokenThere) {
+                dispatch(setTokenIsThere());
+            }
+            if (!user) {
+                dispatch(getAboutUser({ token }));
+            }
             dispatch(getAllPosts());
-            dispatch(getAboutUser({ token: localStorage.getItem('token') }));
+            if (!allProfilesFetched) {
+                dispatch(getAllUsers());
+            }
         }
-        if (!allProfilesFetched) {
-            dispatch(getAllUsers());
-        }
-    }, [isTokenThere, allProfilesFetched, dispatch]);
+    }, [dispatch, router, isTokenThere, user, allProfilesFetched]);
 
     const [postContent, setPostContent] = useState("");
-    const [fileContent, setFileContent] = useState();
+    const [fileContent, setFileContent] = useState(undefined);
     const [commentText, setCommentText] = useState("");
 
     const handleUpload = useCallback(async () => {
@@ -134,6 +138,9 @@ export default function Dashboard() {
         await dispatch(createPost({ file: fileContent, body: postContent }));
         setFileContent(undefined);
         setPostContent("");
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
         dispatch(getAllPosts());
     }, [dispatch, fileContent, postContent]);
 
@@ -160,120 +167,20 @@ export default function Dashboard() {
 
     const loggedUserId = user?.userId?._id || user?._id;
 
-    if (user) {
+    if (typeof window !== 'undefined' && !localStorage.getItem('token')) {
         return (
             <UserLayout>
                 <DashBoardLayOut>
-                    <div className={styles.scrollComponent}>
-                        <div className={styles.createPostContainer}>
-                            <img 
-                                className={styles.userProfile} 
-                                src={getImageUrl(user?.userId?.profilePicture)} 
-                                onError={handleImageError}
-                                alt="profile" 
-                            />
-                            <div className={styles.textareaWrapper}>
-                                <textarea 
-                                    onChange={(e) => setPostContent(e.target.value)} 
-                                    value={postContent} 
-                                    placeholder="What's on your mind?" 
-                                    className={styles.textareaContent}
-                                ></textarea>
-                                
-                                <div className={styles.createPostActions}>
-                                    <label htmlFor="fileUpload" className={styles.fileLabel}>
-                                        <div className={styles.Fab}>
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                                            </svg>
-                                            {fileContent && <span className={styles.fileSelectedIndicator}>✓ Image Selected</span>}
-                                        </div>
-                                    </label>
-                                    <input onChange={(e) => { setFileContent(e.target.files[0]) }} type="file" hidden id="fileUpload" />
-                                    
-                                    {postContent.length > 0 &&
-                                        <div onClick={handleUpload} className={styles.postButton}>Post</div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className={styles.postsContainer}>
-                            {posts.map((post) => (
-                                <PostCard
-                                    key={post._id}
-                                    post={post}
-                                    loggedUserId={loggedUserId}
-                                    onDeletePost={handleDeletePost}
-                                    onLikePost={handleLikePost}
-                                    onOpenComments={handleOpenComments}
-                                />
-                            ))}
-                        </div>
+                    <div className={styles.loadingBox}>
+                        <div className={styles.spinner}></div>
+                        <h2>Redirecting to Login...</h2>
                     </div>
-
-                    {activePostId !== "" &&
-                        <div 
-                            onClick={() => { dispatch(resetPostId()) }}
-                            className={styles.commentsContainer}
-                        >
-                            <div 
-                                onClick={(e) => { e.stopPropagation() }}
-                                className={styles.allCommentsContainer}
-                            >
-                                <div className={styles.commentsHeader}>
-                                    <h3>Comments</h3>
-                                    <button className={styles.closeCommentsBtn} onClick={() => dispatch(resetPostId())}>✕</button>
-                                </div>
-
-                                <div className={styles.commentsListScroll}>
-                                    {comments.length === 0 ? (
-                                        <h2 className={styles.noCommentsTitle}>No Comments</h2>
-                                    ) : (  
-                                        <div className={styles.commentsWrap}>
-                                            {comments.map((postComment) => (
-                                                <div className={styles.singleComment} key={postComment._id}>
-                                                    <div className={styles.commentProfileWrap}>
-                                                        <img 
-                                                            src={getImageUrl(postComment?.userId?.profilePicture)} 
-                                                            onError={handleImageError}
-                                                            alt="" 
-                                                            className={styles.commentAvatar}
-                                                        />
-                                                        <div className={styles.commentMainInfo}>
-                                                            <p className={styles.commentUserTitle}>
-                                                                {postComment?.userId?.name} <span className={styles.commentHandle}>@{postComment?.userId?.username}</span>
-                                                            </p>
-                                                            <p className={styles.commentBodyText}>{postComment.body}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                                
-                                <div className={styles.postCommentContainer}>
-                                    <input 
-                                        type="text" 
-                                        value={commentText} 
-                                        onChange={(e) => setCommentText(e.target.value)} 
-                                        placeholder="Add a comment..."
-                                    />
-                                    <div 
-                                        onClick={handlePostComment} 
-                                        className={styles.postCommentContainer__commentBtn}
-                                    >
-                                        <p>Comment</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
                 </DashBoardLayOut>
             </UserLayout>
         );
-    } else {
+    }
+
+    if (!user) {
         return (
             <UserLayout>
                 <DashBoardLayOut>
@@ -285,4 +192,128 @@ export default function Dashboard() {
             </UserLayout>
         );
     }
+
+    return (
+        <UserLayout>
+            <DashBoardLayOut>
+                <div className={styles.scrollComponent}>
+                    <div className={styles.createPostContainer}>
+                        <img 
+                            className={styles.userProfile} 
+                            src={getImageUrl(user?.userId?.profilePicture || user?.profilePicture)} 
+                            onError={handleImageError}
+                            alt="profile" 
+                        />
+                        <div className={styles.textareaWrapper}>
+                            <textarea 
+                                onChange={(e) => setPostContent(e.target.value)} 
+                                value={postContent} 
+                                placeholder="What's on your mind?" 
+                                className={styles.textareaContent}
+                            ></textarea>
+                            
+                            <div className={styles.createPostActions}>
+                                <label htmlFor="fileUpload" className={styles.fileLabel}>
+                                    <div className={styles.Fab}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                        </svg>
+                                        {fileContent && <span className={styles.fileSelectedIndicator}>✓ Image Selected</span>}
+                                    </div>
+                                </label>
+                                <input 
+                                    ref={fileInputRef}
+                                    onChange={(e) => { 
+                                        if (e.target.files && e.target.files[0]) {
+                                            setFileContent(e.target.files[0]); 
+                                        }
+                                    }} 
+                                    type="file" 
+                                    hidden 
+                                    id="fileUpload" 
+                                />
+                                
+                                {(postContent.trim().length > 0 || fileContent) && (
+                                    <div onClick={handleUpload} className={styles.postButton}>Post</div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className={styles.postsContainer}>
+                        {Array.isArray(posts) && posts.map((post, idx) => (
+                            <PostCard
+                                key={post?._id || post?.id || idx}
+                                post={post}
+                                loggedUserId={loggedUserId}
+                                onDeletePost={handleDeletePost}
+                                onLikePost={handleLikePost}
+                                onOpenComments={handleOpenComments}
+                            />
+                        ))}
+                    </div>
+                </div>
+
+                {Boolean(activePostId) &&
+                    <div 
+                        onClick={() => { dispatch(resetPostId()) }}
+                        className={styles.commentsContainer}
+                    >
+                        <div 
+                            onClick={(e) => { e.stopPropagation() }}
+                            className={styles.allCommentsContainer}
+                        >
+                            <div className={styles.commentsHeader}>
+                                <h3>Comments</h3>
+                                <button className={styles.closeCommentsBtn} onClick={() => dispatch(resetPostId())}>✕</button>
+                            </div>
+
+                            <div className={styles.commentsListScroll}>
+                                {!Array.isArray(comments) || comments.length === 0 ? (
+                                    <h2 className={styles.noCommentsTitle}>No Comments</h2>
+                                ) : (  
+                                    <div className={styles.commentsWrap}>
+                                        {comments.map((postComment, idx) => (
+                                            <div className={styles.singleComment} key={postComment?._id || postComment?.id || idx}>
+                                                <div className={styles.commentProfileWrap}>
+                                                    <img 
+                                                        src={getImageUrl(postComment?.userId?.profilePicture || postComment?.profilePicture)} 
+                                                        onError={handleImageError}
+                                                        alt="" 
+                                                        className={styles.commentAvatar}
+                                                    />
+                                                    <div className={styles.commentMainInfo}>
+                                                        <p className={styles.commentUserTitle}>
+                                                            {postComment?.userId?.name || postComment?.name || "User"} <span className={styles.commentHandle}>@{postComment?.userId?.username || postComment?.username || "user"}</span>
+                                                        </p>
+                                                        <p className={styles.commentBodyText}>{postComment?.body}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className={styles.postCommentContainer}>
+                                <input 
+                                    type="text" 
+                                    value={commentText} 
+                                    onChange={(e) => setCommentText(e.target.value)} 
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handlePostComment(); }}
+                                    placeholder="Add a comment..."
+                                />
+                                <div 
+                                    onClick={handlePostComment} 
+                                    className={styles.postCommentContainer__commentBtn}
+                                >
+                                    <p>Comment</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </DashBoardLayOut>
+        </UserLayout>
+    );
 }

@@ -218,12 +218,18 @@ export const getUserAndProfile = async (req,res)=>{  // show updated profile (pr
              return res.status(400).json({message : "user not found"});
         }
 
-        const userProfile = await Profile.findOne({
+        let userProfile = await Profile.findOne({
             userId : user._id    //in profile model userId is ref to userId in user model
         })
         .populate('userId','name email username profilePicture');
 
-        await res.json({userProfile});
+        if (!userProfile) {
+            userProfile = new Profile({ userId: user._id });
+            await userProfile.save();
+            userProfile = await Profile.findOne({ userId: user._id }).populate('userId', 'name email username profilePicture');
+        }
+
+        return res.json({ userProfile });
 
         
     }
